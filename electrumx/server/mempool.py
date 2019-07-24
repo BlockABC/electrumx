@@ -373,6 +373,11 @@ class MemPool(object):
             result.append(MemPoolTxSummary(tx_hash, tx.fee, has_ui))
         return result
 
+    async def transaction_have(self, hashX):
+        '''Return if a hashX has transaction'''
+        if len(self.hashXs.get(hashX, ())) > 0:
+            return True
+
     async def unordered_UTXOs(self, hashX):
         '''Return an unordered list of UTXO named tuples from mempool
         transactions that pay to hashX.

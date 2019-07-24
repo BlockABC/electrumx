@@ -729,6 +729,15 @@ class SessionManager:
             raise result
         return result, cost
 
+
+    async def has_history(self, hashX):
+        ''' Returns one history transaction'''
+        result = await self.db.limited_history(hashX, 1)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+
     async def _notify_sessions(self, height, touched):
         '''Notify sessions about height changes and touched addresses.'''
         # Invalidate our height-based caches in case of a reorg
@@ -1091,6 +1100,20 @@ class ElectrumX(SessionBase):
         hashX = scripthash_to_hashX(scripthash)
         return await self.confirmed_and_unconfirmed_history(hashX)
 
+    async def scripthash_has_used(self, scripthash):
+        '''Return  is a scripthash already in use'''
+        hashX = scripthash_to_hashX(scripthash)
+        history = await self.session_mgr.has_history(hashX)
+        conf = [{'tx_hash': hash_to_hex_str(tx_hash), 'height': height}
+                for tx_hash, height in history]
+        if len(conf) > 0:
+            return True
+        
+        if await self.mempool.transaction_have(hashX):
+            return True
+
+        return False
+
     async def scripthash_get_mempool(self, scripthash):
         '''Return the mempool transactions touching a scripthash.'''
         hashX = scripthash_to_hashX(scripthash)
@@ -1381,6 +1404,7 @@ class ElectrumX(SessionBase):
             'blockchain.relayfee': self.relayfee,
             'blockchain.scripthash.get_balance': self.scripthash_get_balance,
             'blockchain.scripthash.get_history': self.scripthash_get_history,
+            'blockchain.scripthash.has_used': self.scripthash_has_used,
             'blockchain.scripthash.get_mempool': self.scripthash_get_mempool,
             'blockchain.scripthash.listunspent': self.scripthash_listunspent,
             'blockchain.scripthash.subscribe': self.scripthash_subscribe,
