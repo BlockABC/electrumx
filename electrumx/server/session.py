@@ -732,7 +732,7 @@ class SessionManager:
 
     async def has_history(self, hashX):
         ''' Returns one history transaction'''
-        result = await self.db.limited_history(hashX, 1)
+        result = await self.db.limited_history(hashX, limit=1)
         if isinstance(result, Exception):
             raise result
         return result
